@@ -6,7 +6,7 @@ part 'log_model.g.dart';
 @HiveType(typeId: 0)
 class LogModel extends HiveObject {
   @HiveField(0)
-  final String? idString; // ObjectId disimpan sebagai hex string
+  final String? idString;
 
   @HiveField(1)
   final String title;
@@ -26,6 +26,9 @@ class LogModel extends HiveObject {
   @HiveField(6)
   final String owner;
 
+  @HiveField(7)
+  final bool isPublic;
+
   LogModel({
     String? idString,
     ObjectId? id,
@@ -35,9 +38,9 @@ class LogModel extends HiveObject {
     required this.category,
     required this.createdAt,
     required this.owner,
+    this.isPublic = false,
   }) : idString = idString ?? id?.toHexString();
 
-  /// Getter untuk mendapatkan ObjectId (untuk operasi MongoDB)
   ObjectId? get id =>
       idString != null ? ObjectId.fromHexString(idString!) : null;
 
@@ -51,6 +54,7 @@ class LogModel extends HiveObject {
       'date': date.toIso8601String(),
       'createdAt': createdAt,
       'owner': owner,
+      'isPublic': isPublic,
     };
   }
 
@@ -75,6 +79,7 @@ class LogModel extends HiveObject {
           ? map['createdAt'].toString()
           : DateTime.now().toIso8601String(),
       owner: map['owner'] ?? 'unknown',
+      isPublic: map['isPublic'] ?? false,
     );
   }
 }

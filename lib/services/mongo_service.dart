@@ -33,6 +33,27 @@ class MongoService {
     return _collection!;
   }
 
+  Future<void> reconnect() async {
+    try {
+      if (_db != null) {
+        await _db!.close();
+      }
+    } catch (_) {
+      
+    }
+    
+    _db = null;
+    _collection = null;
+    
+    await LogHelper.writeLog(
+      "NETWORK: Mencoba rekoneksi ulang dari nol...",
+      source: _source,
+      level: 3,
+    );
+    
+    await connect();
+  }
+
   Future<void> connect() async {
     try {
       final dbUri = dotenv.env['MONGODB_URI'];
@@ -78,7 +99,7 @@ class MongoService {
           "Koneksi Internet Terputus",
         );
       }
-
+      
       final collection = await _getSafeCollection();
 
       await LogHelper.writeLog(

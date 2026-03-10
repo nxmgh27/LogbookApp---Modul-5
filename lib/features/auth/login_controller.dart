@@ -1,15 +1,16 @@
-class LoginController {
+// lib/features/auth/login_controller.dart
 
-  final Map<String, String> _users = {
-    "admin": "123",
-    "Nike": "nk27",
+class LoginController {
+  final Map<String, Map<String, String>> _users = {
+    "admin": {"password": "123", "role": "Ketua"},
+    "Nike": {"password": "nk27", "role": "Anggota"},
   };
 
-  bool login(String username, String password) {
+  Map<String, String>? login(String username, String password) {
     if (_users.containsKey(username) &&
-        _users[username] == password) {
-      return true;
+        _users[username]!["password"] == password) {
+      return {"username": username, "role": _users[username]!["role"]!};
     }
-    return false;
+    return null;
   }
 }
