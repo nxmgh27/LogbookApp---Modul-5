@@ -1,3 +1,5 @@
+//lib/features/auth/login_view.dart
+
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -62,12 +64,13 @@ class _LoginViewState extends State<LoginView> {
 
     if (userData != null) {
       String role = userData["role"]!;
+      String teamId = userData["teamId"]!; 
 
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-              LogView(username: username, role: role),
+              LogView(username: username, role: role, teamId: teamId), 
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             var slideTween = Tween(
               begin: const Offset(0, 1),
@@ -125,7 +128,6 @@ class _LoginViewState extends State<LoginView> {
           ),
 
           Container(color: const Color(0xFF103A57).withValues(alpha: 0.7)),
-          // Card login
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -151,12 +153,11 @@ class _LoginViewState extends State<LoginView> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white, // Ganti putih agar estetik
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 8),
 
-                        // Username field
                         SizedBox(
                           height: 45,
                           child: TextField(
@@ -181,7 +182,6 @@ class _LoginViewState extends State<LoginView> {
 
                         const SizedBox(height: 12),
 
-                        // Password field
                         SizedBox(
                           height: 45,
                           child: TextField(
@@ -220,7 +220,6 @@ class _LoginViewState extends State<LoginView> {
 
                         const SizedBox(height: 20),
 
-                        // Tombol login
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(

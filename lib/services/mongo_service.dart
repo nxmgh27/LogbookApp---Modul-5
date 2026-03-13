@@ -38,9 +38,7 @@ class MongoService {
       if (_db != null) {
         await _db!.close();
       }
-    } catch (_) {
-      
-    }
+    } catch (_) {}
     
     _db = null;
     _collection = null;
@@ -78,16 +76,12 @@ class MongoService {
         level: 2,
       );
     } catch (e) {
-      await LogHelper.writeLog(
-        "DATABASE: Gagal Koneksi - $e",
-        source: _source,
-        level: 1,
-      );
+      await LogHelper.writeLog("DATABASE: Gagal Koneksi - $e", source: _source, level: 1);
       rethrow;
     }
   }
 
-  Future<List<LogModel>> getLogs() async {
+  Future<List<LogModel>> getLogs(String teamId) async {
     try {
       try {
         final result = await InternetAddress.lookup('google.com');
@@ -95,27 +89,17 @@ class MongoService {
           throw Exception("No Internet Access");
         }
       } on SocketException catch (_) {
-        throw Exception(
-          "Koneksi Internet Terputus",
-        );
+        throw Exception("Koneksi Internet Terputus");
       }
       
       final collection = await _getSafeCollection();
 
-      await LogHelper.writeLog(
-        "INFO: Fetching data from Cloud...",
-        source: _source,
-        level: 3,
-      );
+      await LogHelper.writeLog("INFO: Fetching data for Team $teamId from Cloud...", source: _source, level: 3);
 
-      final List<Map<String, dynamic>> data = await collection.find().toList();
+      final List<Map<String, dynamic>> data = await collection.find(where.eq('teamId', teamId)).toList();
       return data.map((json) => LogModel.fromMap(json)).toList();
     } catch (e) {
-      await LogHelper.writeLog(
-        "ERROR: Fetch Failed - $e",
-        source: _source,
-        level: 1,
-      );
+      await LogHelper.writeLog("ERROR: Fetch Failed - $e", source: _source, level: 1);
       rethrow;
     }
   }
@@ -124,7 +108,7 @@ class MongoService {
     try {
       final collection = await _getSafeCollection();
       final List<Map<String, dynamic>> data = await collection
-          .find(where.eq('owner', username))
+          .find(where.eq('authorId', username))
           .toList();
 
       return data.map((json) => LogModel.fromMap(json)).toList();
@@ -137,18 +121,9 @@ class MongoService {
     try {
       final collection = await _getSafeCollection();
       await collection.insertOne(log.toMap());
-
-      await LogHelper.writeLog(
-        "SUCCESS: Data '${log.title}' Saved to Cloud",
-        source: _source,
-        level: 2,
-      );
+      await LogHelper.writeLog("SUCCESS: Data '${log.title}' Saved to Cloud", source: _source, level: 2);
     } catch (e) {
-      await LogHelper.writeLog(
-        "ERROR: Insert Failed - $e",
-        source: _source,
-        level: 1,
-      );
+      await LogHelper.writeLog("ERROR: Insert Failed - $e", source: _source, level: 1);
       rethrow;
     }
   }
@@ -159,20 +134,10 @@ class MongoService {
       if (log.id == null) {
         throw Exception("ID Log tidak ditemukan untuk update");
       }
-
-      await collection.replaceOne(where.id(log.id!), log.toMap());
-
-      await LogHelper.writeLog(
-        "DATABASE: Update '${log.title}' Berhasil",
-        source: _source,
-        level: 2,
-      );
+      await collection.replaceOne(where.id(ObjectId.fromHexString(log.id!)), log.toMap());
+      await LogHelper.writeLog("DATABASE: Update '${log.title}' Berhasil", source: _source, level: 2);
     } catch (e) {
-      await LogHelper.writeLog(
-        "DATABASE: Update Gagal - $e",
-        source: _source,
-        level: 1,
-      );
+      await LogHelper.writeLog("DATABASE: Update Gagal - $e", source: _source, level: 1);
       rethrow;
     }
   }
@@ -180,20 +145,10 @@ class MongoService {
   Future<void> deleteLog(ObjectId id) async {
     try {
       final collection = await _getSafeCollection();
-
       await collection.remove(where.id(id));
-
-      await LogHelper.writeLog(
-        "DATABASE: Hapus ID $id Berhasil",
-        source: _source,
-        level: 2,
-      );
+      await LogHelper.writeLog("DATABASE: Hapus ID $id Berhasil", source: _source, level: 2);
     } catch (e) {
-      await LogHelper.writeLog(
-        "DATABASE: Hapus Gagal - $e",
-        source: _source,
-        level: 1,
-      );
+      await LogHelper.writeLog("DATABASE: Hapus Gagal - $e", source: _source, level: 1);
       rethrow;
     }
   }
@@ -201,11 +156,7 @@ class MongoService {
   Future<void> close() async {
     if (_db != null) {
       await _db!.close();
-      await LogHelper.writeLog(
-        "DATABASE: Koneksi ditutup",
-        source: _source,
-        level: 2,
-      );
+      await LogHelper.writeLog("DATABASE: Koneksi ditutup", source: _source, level: 2);
     }
   }
 }

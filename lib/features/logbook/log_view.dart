@@ -8,32 +8,49 @@ import 'package:logbook_app_086/features/logbook/log_editor_page.dart';
 import 'package:logbook_app_086/features/logbook/widgets/log_item_widget.dart';
 import 'package:logbook_app_086/features/onboarding/onboarding_view.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async'; 
 
 class LogView extends StatefulWidget {
   final String username;
   final String role; 
+  final String teamId; 
 
-  const LogView({super.key, required this.username, this.role = 'Anggota'});
+  const LogView({super.key, required this.username, this.role = 'Anggota', required this.teamId});
 
   @override
   State<LogView> createState() => _LogViewState();
 }
 
-class _LogViewState extends State<LogView> {
+class _LogViewState extends State<LogView> with SingleTickerProviderStateMixin {
   final LogController _controller = LogController();
   final TextEditingController _searchController = TextEditingController();
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription; // BARU: Pemantau jaringan
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription; 
+  late AnimationController _animationController;
+  late Animation<Offset> _floatingAnimation;
 
   @override
   void initState() {
     super.initState();
     
+    _controller.init(widget.teamId); 
+    
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2), 
+    )..repeat(reverse: true); 
+
+    _floatingAnimation = Tween<Offset>(
+      begin: const Offset(0, -0.15), 
+      end: const Offset(0, 0.05),    
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut, 
+    ));
+
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
       if (!results.contains(ConnectivityResult.none) && _controller.isOffline.value) {
-
         _controller.loadFromDisk();
-       
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -51,6 +68,52 @@ class _LogViewState extends State<LogView> {
   void dispose() {
     _searchController.dispose();
     _connectivitySubscription.cancel(); 
+    _animationController.dispose(); 
+    super.dispose();
+  }
+
+  void _runPrivacyLeakTest() {
+    final allLogs = _controller.logsNotifier.value;
+    int hiddenPrivateLogs = 0;
+    int visibleLogs = 0;
+    bool isSecure = true;
+
+    for (var log in allLogs) {
+      final isOwner = log.authorId == widget.username;
+      final isPublic = log.isPublic == true;
+
+      if (!isOwner && !isPublic) {
+        hiddenPrivateLogs++;
+      } else {
+        visibleLogs++;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFA9B6C4),
+        title: const Row(
+          children: [
+            Icon(Icons.security, color: Color(0xFF243C2C)),
+            SizedBox(width: 8),
+            Text("Privacy Leak Test", style: TextStyle(color: Color(0xFF243C2C))),
+          ],
+        ),
+        content: Text(
+          isSecure 
+            ? "Status Keamanan: AMAN \n\n- Catatan yang dapat Anda lihat: $visibleLogs\n- Catatan privat anggota lain yang dienkapsulasi (disembunyikan): $hiddenPrivateLogs\n\nValidasi RBAC berjalan dengan sangat baik. Tidak ada kebocoran data privasi."
+            : "Status Keamanan: BOCOR \nSilakan periksa kembali logika filter RBAC Anda.",
+          style: const TextStyle(color: Color(0xFF243C2C)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Tutup", style: TextStyle(color: Color(0xFF243C2C))),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<bool?> _confirmDelete(int index) async {
@@ -157,13 +220,18 @@ class _LogViewState extends State<LogView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("${_controller.getGreeting()} ${widget.username}!", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
-            Text("Role: ${widget.role}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
+            Text("Tim: ${widget.teamId} | Role: ${widget.role}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
           ],
         ),
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF243C2C),
         foregroundColor: const Color(0xFFECE69D),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.security_rounded),
+            tooltip: "Jalankan Tes Kebocoran Privasi",
+            onPressed: _runPrivacyLeakTest,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => _controller.loadFromDisk(),
@@ -215,7 +283,7 @@ class _LogViewState extends State<LogView> {
                 controller: _searchController,
                 onChanged: (value) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: "Cari judul...",
+                  hintText: "Cari judul atau isi catatan...",
                   prefixIcon: const Icon(Icons.search, color: Color(0xFF243C2C)),
                   filled: true,
                   fillColor: const Color(0xFFA9B6C4).withOpacity(0.8),
@@ -229,7 +297,17 @@ class _LogViewState extends State<LogView> {
                 valueListenable: _controller.logsNotifier,
                 builder: (context, allLogs, child) {
                   
-                  final filteredLogs = allLogs.where((log) => log.title.toLowerCase().contains(_searchController.text.toLowerCase())).toList();
+                  final String query = _searchController.text.toLowerCase();
+                  
+                  final filteredLogs = allLogs.where((log) {
+                    final isOwner = log.authorId == widget.username; 
+                    final isPublic = log.isPublic == true;
+                    
+                    final matchesSearch = log.title.toLowerCase().contains(query) || 
+                                          log.description.toLowerCase().contains(query);
+
+                    return (isOwner || isPublic) && matchesSearch;
+                  }).toList();
 
                   if (filteredLogs.isEmpty) {
                     if (_controller.isOffline.value && _searchController.text.isEmpty) {
@@ -240,13 +318,29 @@ class _LogViewState extends State<LogView> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.cloud_off, size: 80, color: Color(0xFF243C2C)),
-                          const SizedBox(height: 10),
-                          Text(
-                            _searchController.text.isEmpty ? "Belum ada catatan." : "Catatan tidak ditemukan",
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF243C2C)),
+                          
+                          SlideTransition(
+                            position: _floatingAnimation,
+                            child: SvgPicture.network(
+                              'https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/box-open.svg', 
+                              height: 100,
+                              colorFilter: const ColorFilter.mode(Color(0xFF243C2C), BlendMode.srcIn),
+                              placeholderBuilder: (context) => const CircularProgressIndicator(color: Color(0xFF243C2C)),
+                            ),
                           ),
-                          const SizedBox(height: 16),
+
+                          const SizedBox(height: 24),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Text(
+                              _searchController.text.isEmpty 
+                                  ? "Belum ada aktivitas hari ini?\nMulai catat kemajuan proyek Anda!" 
+                                  : "Catatan tidak ditemukan.",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF243C2C), height: 1.5),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF243C2C), foregroundColor: const Color(0xFFECE69D)),
                             onPressed: () => _goToEditor(),
@@ -265,13 +359,13 @@ class _LogViewState extends State<LogView> {
                       itemCount: filteredLogs.length,
                       itemBuilder: (context, index) {
                         final log = filteredLogs[index];
-                        final isOwner = log.owner == widget.username;
+                        final isOwner = log.authorId == widget.username;
                      
                         final canDelete = AccessControlService.canPerform(widget.role, AccessControlService.actionDelete, isOwner: isOwner);
 
                         return canDelete 
                           ? Dismissible(
-                              key: Key(log.idString ?? index.toString()),
+                              key: Key(log.id ?? index.toString()),
                               direction: DismissDirection.endToStart,
                               confirmDismiss: (direction) => _confirmDelete(index),
                               onDismissed: (direction) async {

@@ -17,14 +17,14 @@ class LogModelAdapter extends TypeAdapter<LogModel> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return LogModel(
-      idString: fields[0] as String?,
+      id: fields[0] as String?,
       title: fields[1] as String,
       description: fields[2] as String,
-      date: fields[3] as DateTime,
-      category: fields[4] as String,
-      createdAt: fields[5] as String,
-      owner: fields[6] as String,
-      isPublic: fields[7] as bool,
+      date: fields[3] as String,
+      authorId: fields[4] as String,
+      teamId: fields[5] as String,
+      isPublic: fields[6] as bool,
+      category: fields[7] as String,
     );
   }
 
@@ -33,7 +33,7 @@ class LogModelAdapter extends TypeAdapter<LogModel> {
     writer
       ..writeByte(8)
       ..writeByte(0)
-      ..write(obj.idString)
+      ..write(obj.id)
       ..writeByte(1)
       ..write(obj.title)
       ..writeByte(2)
@@ -41,13 +41,13 @@ class LogModelAdapter extends TypeAdapter<LogModel> {
       ..writeByte(3)
       ..write(obj.date)
       ..writeByte(4)
-      ..write(obj.category)
+      ..write(obj.authorId)
       ..writeByte(5)
-      ..write(obj.createdAt)
+      ..write(obj.teamId)
       ..writeByte(6)
-      ..write(obj.owner)
+      ..write(obj.isPublic)
       ..writeByte(7)
-      ..write(obj.isPublic);
+      ..write(obj.category);
   }
 
   @override

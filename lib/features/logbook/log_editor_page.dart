@@ -27,9 +27,9 @@ class _LogEditorPageState extends State<LogEditorPage> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   
-  final List<String> _categories = ["Pekerjaan", "Urgent", "Pribadi"];
+  final List<String> _categories = ["Meeting", "Development", "Testing", "Deployment", "Research", "Documentation"];
   late String _selectedCategory;
-  bool _isPublic = false; // Status Privasi (Tombol Slide)
+  bool _isPublic = false; 
 
   @override
   void initState() {
@@ -76,8 +76,8 @@ class _LogEditorPageState extends State<LogEditorPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.log == null ? "Catatan Baru" : "Edit Catatan"),
-          backgroundColor: const Color(0xFF243C2C), // Warna asli
-          foregroundColor: const Color(0xFFECE69D), // Warna asli
+          backgroundColor: const Color(0xFF243C2C), 
+          foregroundColor: const Color(0xFFECE69D), 
           bottom: const TabBar(
             labelColor: Color(0xFFECE69D),
             unselectedLabelColor: Colors.grey,
@@ -95,17 +95,18 @@ class _LogEditorPageState extends State<LogEditorPage> {
           ],
         ),
         body: Container(
+          height: double.infinity,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF59789F), Color(0xFFA9B6C4)], // Warna background asli
+              colors: [Color(0xFF59789F), Color(0xFFA9B6C4)], 
             ),
           ),
           child: TabBarView(
             children: [
-              // --- TAB 1: EDITOR ---
-              Padding(
+              // --- TAB 1: EDITOR (Diubah jadi SingleChildScrollView agar rapi) ---
+              SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
@@ -132,7 +133,6 @@ class _LogEditorPageState extends State<LogEditorPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    // --- ICON YANG BISA DI-SLIDE DENGAN TEMA ASLI ---
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
@@ -155,7 +155,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
                           ),
                           Switch(
                             value: _isPublic,
-                            activeColor: const Color(0xFF7A9445), // Warna switch hijau
+                            activeColor: const Color(0xFF7A9445), 
                             onChanged: (val) {
                               setState(() {
                                 _isPublic = val;
@@ -168,19 +168,18 @@ class _LogEditorPageState extends State<LogEditorPage> {
                     
                     const SizedBox(height: 12),
                     
-                    Expanded(
-                      child: TextField(
-                        controller: _descController,
-                        maxLines: null,
-                        expands: true,
-                        keyboardType: TextInputType.multiline,
-                        textAlignVertical: TextAlignVertical.top,
-                        decoration: InputDecoration(
-                          hintText: "Tulis isi laporanmu di sini...\n\nKamu bisa menggunakan sintaks Markdown!\nContoh:\n# Ini Judul Besar\n**Ini Teks Tebal**",
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.8),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
+                    // Hilangkan Expanded, gunakan minLines agar kotaknya tetap besar
+                    TextField(
+                      controller: _descController,
+                      maxLines: null,
+                      minLines: 12, // <--- Ini menjaga tinggi textbox agar tidak menyusut
+                      keyboardType: TextInputType.multiline,
+                      textAlignVertical: TextAlignVertical.top,
+                      decoration: InputDecoration(
+                        hintText: "Tulis isi laporanmu di sini...\n\nKamu bisa menggunakan sintaks Markdown!\nContoh:\n# Ini Judul Besar\n**Ini Teks Tebal**",
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.8),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ],

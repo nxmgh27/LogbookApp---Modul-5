@@ -1,12 +1,13 @@
 import 'package:hive/hive.dart';
-import 'package:mongo_dart/mongo_dart.dart';
+import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 
 part 'log_model.g.dart';
 
 @HiveType(typeId: 0)
 class LogModel extends HiveObject {
+  // --- SESUAI MODUL LANGKAH 1.2 & 2.2 ---
   @HiveField(0)
-  final String? idString;
+  final String? id;
 
   @HiveField(1)
   final String title;
@@ -15,71 +16,62 @@ class LogModel extends HiveObject {
   final String description;
 
   @HiveField(3)
-  final DateTime date;
+  final String date;
 
   @HiveField(4)
-  final String category;
+  final String authorId; // Sesuai Modul: Penanda siapa pembuatnya
 
   @HiveField(5)
-  final String createdAt;
+  final String teamId; // Sesuai Modul: Penanda data milik kelompok mana
 
+  // --- SESUAI MODUL TASK 5 (HOTS) ---
   @HiveField(6)
-  final String owner;
+  final bool isPublic; 
 
+  // --- SESUAI MODUL HOMEWORK (KATEGORI) ---
   @HiveField(7)
-  final bool isPublic;
+  final String category;
 
   LogModel({
-    String? idString,
-    ObjectId? id,
+    this.id,
     required this.title,
     required this.description,
     required this.date,
-    required this.category,
-    required this.createdAt,
-    required this.owner,
+    required this.authorId,
+    required this.teamId,
     this.isPublic = false,
-  }) : idString = idString ?? id?.toHexString();
+    this.category = 'Pribadi',
+  });
 
-  ObjectId? get id =>
-      idString != null ? ObjectId.fromHexString(idString!) : null;
-
-  Map<String, dynamic> toMap() {
-    final oid = id ?? ObjectId();
-    return {
-      '_id': oid,
-      'title': title,
-      'description': description,
-      'category': category,
-      'date': date.toIso8601String(),
-      'createdAt': createdAt,
-      'owner': owner,
-      'isPublic': isPublic,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        '_id': id != null ? ObjectId.fromHexString(id!) : ObjectId(),
+        'title': title,
+        'description': description,
+        'date': date,
+        'authorId': authorId,
+        'teamId': teamId,
+        'isPublic': isPublic,
+        'category': category,
+      };
 
   factory LogModel.fromMap(Map<String, dynamic> map) {
-    final rawId = map['_id'];
-    String? hexId;
-    if (rawId is ObjectId) {
-      hexId = rawId.toHexString();
-    } else if (rawId != null) {
-      hexId = rawId.toString();
+    // Menangani _id dari MongoDB agar jadi String
+    String? parsedId;
+    if (map['_id'] is ObjectId) {
+      parsedId = (map['_id'] as ObjectId).oid;
+    } else if (map['_id'] != null) {
+      parsedId = map['_id'].toString();
     }
 
     return LogModel(
-      idString: hexId,
+      id: parsedId,
       title: map['title'] ?? '',
       description: map['description'] ?? '',
-      date: map['date'] != null
-          ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      category: map['category'] ?? 'Pribadi',
-      createdAt: map['createdAt'] != null
-          ? map['createdAt'].toString()
-          : DateTime.now().toIso8601String(),
-      owner: map['owner'] ?? 'unknown',
+      date: map['date'] ?? DateTime.now().toString(),
+      authorId: map['authorId'] ?? 'unknown_user',
+      teamId: map['teamId'] ?? 'no_team',
       isPublic: map['isPublic'] ?? false,
+      category: map['category'] ?? 'Pribadi',
     );
   }
 }

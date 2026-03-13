@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_markdown/flutter_markdown.dart'; 
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:logbook_app_086/features/logbook/models/log_model.dart';
 import 'package:logbook_app_086/features/logbook/log_controller.dart';
 import 'package:logbook_app_086/services/access_control_service.dart';
@@ -31,11 +31,18 @@ class LogItemWidget extends StatelessWidget {
 
   Color _getCategoryColor(String category) {
     switch (category) {
-      case "Pribadi":
+      case "Meeting":
         return const Color(0xFFE2D96E); // Kuning
-      case "Urgent":
+      case "Development":
         return const Color(0xFF4A6A8D); // Biru Gelap
-      case "Pekerjaan":
+      case "Testing":
+        return const Color(0xFF6B8A3C); // Hijau
+      case "Deployment":
+        return const Color(0xFF8B4513); // Coklat
+      case "Research":
+        return const Color(0xFF9370DB); // Ungu
+      case "Documentation":
+        return const Color(0xFF20B2AA); // Teal
       default:
         return const Color(0xFF6B8A3C); // Hijau
     }
@@ -54,7 +61,9 @@ class LogItemWidget extends StatelessWidget {
         child: Container(
           width: double.infinity,
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.8, // Maksimal 80% tinggi layar
+            maxHeight:
+                MediaQuery.of(context).size.height *
+                0.8, // Maksimal 80% tinggi layar
           ),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -103,10 +112,15 @@ class LogItemWidget extends StatelessWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.person, size: 14, color: primaryDark.withValues(alpha: 0.6)),
+                                  Icon(
+                                    Icons.person,
+                                    size: 14,
+                                    color: primaryDark.withValues(alpha: 0.6),
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    log.owner,
+                                    // PERBAIKAN: Gunakan authorId
+                                    log.authorId,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -119,7 +133,9 @@ class LogItemWidget extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    log.isPublic ? Icons.public : Icons.lock_outline,
+                                    log.isPublic
+                                        ? Icons.public
+                                        : Icons.lock_outline,
                                     size: 14,
                                     color: primaryDark.withValues(alpha: 0.6),
                                   ),
@@ -137,11 +153,17 @@ class LogItemWidget extends StatelessWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.access_time, size: 14, color: primaryDark.withValues(alpha: 0.6)),
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 14,
+                                    color: primaryDark.withValues(alpha: 0.6),
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
+                                    // PERBAIKAN: Gunakan date
                                     DateFormat('dd MMM yyyy, HH:mm').format(
-                                      DateTime.parse(log.createdAt.toString()),
+                                      DateTime.tryParse(log.date) ??
+                                          DateTime.now(),
                                     ),
                                     style: TextStyle(
                                       fontSize: 12,
@@ -188,7 +210,8 @@ class LogItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOwner = log.owner == currentUsername;
+    // PERBAIKAN: Gunakan authorId
+    final isOwner = log.authorId == currentUsername;
     final canUpdate = AccessControlService.canPerform(
       currentRole,
       AccessControlService.actionUpdate,
@@ -250,7 +273,8 @@ class LogItemWidget extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    log.owner,
+                                    // PERBAIKAN: Gunakan authorId
+                                    log.authorId,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -263,7 +287,9 @@ class LogItemWidget extends StatelessWidget {
                                 children: [
                                   // --- IKON PUBLIK/PRIVAT ---
                                   Icon(
-                                    log.isPublic ? Icons.public : Icons.lock_outline,
+                                    log.isPublic
+                                        ? Icons.public
+                                        : Icons.lock_outline,
                                     size: 14,
                                     color: primaryDark.withValues(alpha: 0.6),
                                   ),
@@ -276,23 +302,26 @@ class LogItemWidget extends StatelessWidget {
                                       color: primaryDark.withValues(alpha: 0.6),
                                     ),
                                   ),
-                                  
+
                                   const SizedBox(width: 8),
-                                  
+
                                   // --- IKON STATUS CLOUD SYNC ---
                                   Icon(
-                                    log.idString != null
+                                    // PERBAIKAN: Gunakan id
+                                    log.id != null
                                         ? Icons.cloud_done
                                         : Icons.cloud_upload_outlined,
                                     size: 14,
-                                    color: log.idString != null
+                                    color: log.id != null
                                         ? Colors.green
                                         : Colors.orange,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
+                                    // PERBAIKAN: Gunakan date
                                     DateFormat('dd MMM, HH:mm').format(
-                                      DateTime.parse(log.createdAt.toString()),
+                                      DateTime.tryParse(log.date) ??
+                                          DateTime.now(),
                                     ),
                                     style: const TextStyle(
                                       fontSize: 11,
